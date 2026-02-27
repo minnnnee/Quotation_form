@@ -1,0 +1,21 @@
+{
+  "name": "도배 견적서",
+  "short_name": "도배견적",
+  "description": "도배 견적서 작성 및 카카오톡 공유",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

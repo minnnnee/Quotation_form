@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+:root {
+  --blue: #2563eb;
+  --blue-light: #eff6ff;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: #f1f5f9;
+  font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+}
