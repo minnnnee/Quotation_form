@@ -67,7 +67,13 @@ export default function PreviewPage() {
     const url = await buildShareUrl();
     if (navigator.share) {
       try {
-        await navigator.share({ url });
+        const bizName = settings.bizName || '도배업체';
+        const customerName = q?.customerName ? `${q.customerName}님` : '고객님';
+        await navigator.share({
+          title: `[도배 견적서] ${customerName}`,
+          text: `${bizName}에서 도배 견적서를 보내드렸습니다. 아래 링크를 눌러 확인해 주세요.`,
+          url,
+        });
         return;
       } catch (e: any) {
         if (e?.name === 'AbortError') return;
@@ -91,8 +97,11 @@ export default function PreviewPage() {
   async function handleSMS() {
     const phone = q?.customerPhone.replace(/\D/g, '') ?? '';
     const url = await buildShareUrl();
+    const bizName = settings.bizName || '도배업체';
+    const customerName = q?.customerName ? `${q.customerName}님` : '고객님';
+    const body = `[도배 견적서]\n${customerName}, ${bizName}에서 견적서를 보내드렸습니다.\n아래 링크를 눌러 확인해 주세요.\n\n${url}`;
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    window.open(`sms:${phone}${isIOS ? '&' : '?'}body=${encodeURIComponent(url)}`);
+    window.open(`sms:${phone}${isIOS ? '&' : '?'}body=${encodeURIComponent(body)}`);
   }
 
   return (
