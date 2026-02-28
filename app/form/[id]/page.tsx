@@ -1,12 +1,13 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Quotation, WallpaperType, WorkScope } from '@/types';
+import { Quotation, WallpaperType, WorkScope, PaymentMethod } from '@/types';
 import { saveQuotation, getQuotationById } from '@/lib/storage';
-import { calcTotal, generateId, today } from '@/lib/format';
+import { calcTotal, generateId } from '@/lib/format';
 
-const WALLPAPER_TYPES: WallpaperType[] = ['합지', '실크', '실크고급', '한지', '직접입력'];
+const WALLPAPER_TYPES: WallpaperType[] = ['합지', '실크', '합지(소폭)', '직접입력'];
 const WORK_SCOPES: WorkScope[] = ['전체', '부분'];
+const PAYMENT_METHODS: PaymentMethod[] = ['현금', '카드'];
 
 function emptyForm(): Omit<Quotation, 'id' | 'createdAt'> {
   return {
@@ -16,13 +17,10 @@ function emptyForm(): Omit<Quotation, 'id' | 'createdAt'> {
     workScope: '전체',
     wallpaperType: '실크',
     wallpaperTypeCustom: '',
-    removeOldWallpaper: false,
     totalArea: 0,
-    materialCost: 0,
-    laborCost: 0,
-    removeCost: 0,
-    otherCost: 0,
-    discountAmount: 0,
+    paymentMethod: '현금',
+    workCost: 0,
+    contractDeposit: 0,
     totalAmount: 0,
     workDate: '',
     notes: '',
@@ -42,7 +40,7 @@ export default function FormPage() {
       const q = getQuotationById(id);
       if (q) {
         const { id: _id, createdAt: _ca, ...rest } = q;
-        setForm(rest);
+        setForm({ ...rest, paymentMethod: rest.paymentMethod ?? '현금' });
       }
     }
   }, [id, isNew]);
@@ -50,19 +48,10 @@ export default function FormPage() {
   // 합계 자동 계산
   useEffect(() => {
     setForm(prev => ({ ...prev, totalAmount: calcTotal(prev) }));
-  }, [form.materialCost, form.laborCost, form.removeCost, form.otherCost, form.discountAmount]);
+  }, [form.workCost, form.contractDeposit, form.paymentMethod]);
 
   function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm(prev => ({ ...prev, [key]: value }));
-  }
-
-  function handleMoneyInput(key: keyof typeof form, raw: string) {
-    const num = parseInt(raw.replace(/\D/g, ''), 10) || 0;
-    setForm(prev => ({ ...prev, [key]: num }));
-  }
-
-  function displayMoney(val: number) {
-    return val ? val.toLocaleString('ko-KR') : '';
   }
 
   async function handleSave() {
@@ -180,22 +169,6 @@ export default function FormPage() {
             />
           </Field>
 
-          <Field label="기존 벽지 철거">
-            <button
-              onClick={() => set('removeOldWallpaper', !form.removeOldWallpaper)}
-              className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border text-sm transition-colors ${
-                form.removeOldWallpaper
-                  ? 'bg-blue-50 border-blue-200 text-blue-700'
-                  : 'bg-white border-slate-200 text-slate-500'
-              }`}
-            >
-              <span>{form.removeOldWallpaper ? '철거 포함' : '철거 미포함'}</span>
-              <span className={`w-10 h-6 rounded-full transition-colors relative ${form.removeOldWallpaper ? 'bg-blue-600' : 'bg-slate-200'}`}>
-                <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${form.removeOldWallpaper ? 'translate-x-4' : 'translate-x-0.5'}`} />
-              </span>
-            </button>
-          </Field>
-
           <Field label="시공 예정일">
             <input
               type="date"
@@ -208,24 +181,45 @@ export default function FormPage() {
 
         {/* 견적 금액 */}
         <Section title="견적 금액">
-          <Field label="재료비">
-            <MoneyInput value={form.materialCost} onChange={v => set('materialCost', v)} />
+          <Field label="결제 방식">
+            <div className="flex gap-2">
+              {PAYMENT_METHODS.map(m => (
+                <button
+                  key={m}
+                  onClick={() => set('paymentMethod', m)}
+                  className={`flex-1 py-2.5 rounded-xl text-sm font-medium border transition-colors ${
+                    form.paymentMethod === m
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-white text-slate-600 border-slate-200 active:bg-slate-50'
+                  }`}
+                >
+                  {m === '카드' ? '💳 카드' : '💵 현금'}
+                </button>
+              ))}
+            </div>
           </Field>
-          <Field label="시공비">
-            <MoneyInput value={form.laborCost} onChange={v => set('laborCost', v)} />
+
+          <Field label="벽지 · 인건비 · 부자재 포함">
+            <MoneyInput value={form.workCost} onChange={v => set('workCost', v)} />
           </Field>
-          <Field label="철거비">
-            <MoneyInput value={form.removeCost} onChange={v => set('removeCost', v)} />
-          </Field>
-          <Field label="기타">
-            <MoneyInput value={form.otherCost} onChange={v => set('otherCost', v)} />
-          </Field>
-          <Field label="할인 금액">
-            <MoneyInput value={form.discountAmount} onChange={v => set('discountAmount', v)} prefix="-" />
+
+          {form.paymentMethod === '카드' && form.workCost > 0 && (
+            <Field label="부가세 (VAT 10%)">
+              <div className="flex items-center justify-between px-3 py-2.5 bg-amber-50 border border-amber-100 rounded-xl">
+                <span className="text-xs text-amber-600">카드·현금영수증 발행 시 추가</span>
+                <span className="text-sm font-semibold text-amber-700">
+                  +{Math.round(form.workCost * 0.1).toLocaleString('ko-KR')}원
+                </span>
+              </div>
+            </Field>
+          )}
+
+          <Field label="계약금">
+            <MoneyInput value={form.contractDeposit} onChange={v => set('contractDeposit', v)} prefix="-" />
           </Field>
 
           {/* 합계 */}
-          <div className="bg-blue-600 rounded-2xl px-4 py-4 flex justify-between items-center">
+          <div className="mx-4 mb-4 bg-blue-600 rounded-2xl px-4 py-4 flex justify-between items-center">
             <span className="text-blue-100 font-medium">최종 견적금액</span>
             <span className="text-white font-bold text-xl">
               {calcTotal(form).toLocaleString('ko-KR')}원

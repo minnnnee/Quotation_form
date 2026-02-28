@@ -1,5 +1,6 @@
-export type WallpaperType = '합지' | '실크' | '실크고급' | '한지' | '직접입력';
+export type WallpaperType = '합지' | '실크' | '합지(소폭)' | '직접입력';
 export type WorkScope = '전체' | '부분';
+export type PaymentMethod = '현금' | '카드';
 
 export interface Quotation {
   id: string;
@@ -12,15 +13,12 @@ export interface Quotation {
   workScope: WorkScope;
   wallpaperType: WallpaperType;
   wallpaperTypeCustom: string;
-  removeOldWallpaper: boolean;
   totalArea: number;
-  // 비용 (원 단위)
-  materialCost: number;
-  laborCost: number;
-  removeCost: number;
-  otherCost: number;
-  discountAmount: number;
-  totalAmount: number;
+  // 비용 (원 단위) - 벽지·인건비·부자재 합산, 계약금
+  paymentMethod: PaymentMethod; // 결제 방식 (카드 시 VAT 10% 포함)
+  workCost: number;      // 벽지 · 인건비 · 부자재 포함
+  contractDeposit: number; // 계약금 (차감)
+  totalAmount: number;   // 최종 견적금액 (카드: workCost*1.1 - 계약금, 현금: workCost - 계약금)
   // 일정
   workDate: string;
   // 메모

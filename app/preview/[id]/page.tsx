@@ -4,6 +4,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { Quotation } from '@/types';
 import { getQuotationById } from '@/lib/storage';
 import { formatMoney, formatQuotationText, formatPhone } from '@/lib/format';
+import { getSettings, AppSettings } from '@/lib/settings';
 
 export default function PreviewPage() {
   const router = useRouter();
@@ -11,10 +12,12 @@ export default function PreviewPage() {
   const [q, setQ] = useState<Quotation | null>(null);
   const [copied, setCopied] = useState(false);
   const [sending, setSending] = useState(false);
+  const [settings, setSettings] = useState<AppSettings>(getSettings());
 
   useEffect(() => {
     const data = getQuotationById(id);
     setQ(data);
+    setSettings(getSettings());
   }, [id]);
 
   if (!q) {
@@ -25,7 +28,8 @@ export default function PreviewPage() {
     );
   }
 
-  const text = formatQuotationText(q);
+  const todayStr = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+  const text = formatQuotationText(q, settings.bagCount, settings);
   const wallpaperLabel = q.wallpaperType === '직접입력' ? q.wallpaperTypeCustom : q.wallpaperType;
 
   // 카카오톡 공유
@@ -114,6 +118,50 @@ export default function PreviewPage() {
 
         {/* 견적서 카드 */}
         <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
+
+          {/* 문서 헤더 — 수신 / 업체 정보 */}
+          <div className="px-5 pt-5 pb-4 border-b border-slate-100">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-0">
+              {/* 왼쪽: 수신 / 견적일 / 유효기간 */}
+              <div className="space-y-2.5">
+                <div>
+                  <p className="text-[10px] text-slate-400 mb-0.5">수신</p>
+                  <p className="text-sm font-bold text-slate-800">{q.customerName || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-slate-400 mb-0.5">견적일</p>
+                  <p className="text-sm text-slate-700">{todayStr}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-slate-400 mb-0.5">유효기간</p>
+                  <p className="text-sm text-slate-700">견적일로부터 {settings.quoteValidDays}일</p>
+                </div>
+              </div>
+              {/* 오른쪽: 업체 정보 */}
+              <div className="space-y-2.5">
+                <div>
+                  <p className="text-[10px] text-slate-400 mb-0.5">상호</p>
+                  <p className="text-sm font-semibold text-slate-800">{settings.bizName}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-slate-400 mb-0.5">대표자</p>
+                  <p className="text-sm text-slate-700">{settings.bizOwner}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-slate-400 mb-0.5">사업자번호</p>
+                  <p className="text-sm text-slate-700">{settings.bizRegNo}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-slate-400 mb-0.5">연락처</p>
+                  <p className="text-sm text-slate-700">{settings.bizPhone}</p>
+                  {settings.bizEmail && (
+                    <p className="text-xs text-slate-500 mt-0.5">{settings.bizEmail}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* 상단 배너 */}
           <div className="bg-blue-600 px-5 py-5">
             <p className="text-blue-200 text-xs mb-1">도배 견적서</p>
@@ -134,18 +182,25 @@ export default function PreviewPage() {
             <Row label="시공 범위" value={q.workScope} />
             <Row label="도배지 종류" value={wallpaperLabel || '-'} />
             <Row label="시공 면적" value={`${q.totalArea}평`} />
-            <Row label="기존 벽지 철거" value={q.removeOldWallpaper ? '포함' : '미포함'} />
           </div>
 
           {/* 금액 명세 */}
           <div className="px-5 py-4">
             <p className="text-xs font-semibold text-slate-400 mb-3">금액 명세</p>
-            {q.materialCost > 0 && <Row label="재료비" value={formatMoney(q.materialCost)} />}
-            {q.laborCost > 0 && <Row label="시공비" value={formatMoney(q.laborCost)} />}
-            {q.removeCost > 0 && <Row label="철거비" value={formatMoney(q.removeCost)} />}
-            {q.otherCost > 0 && <Row label="기타" value={formatMoney(q.otherCost)} />}
-            {q.discountAmount > 0 && (
-              <Row label="할인" value={`-${formatMoney(q.discountAmount)}`} valueClass="text-rose-500" />
+            <Row
+              label="결제 방식"
+              value={q.paymentMethod === '카드' ? '💳 카드' : '💵 현금'}
+            />
+            <Row label="벽지 · 인건비 · 부자재" value={formatMoney(q.workCost)} />
+            {q.paymentMethod === '카드' && q.workCost > 0 && (
+              <Row
+                label="부가세 (VAT 10%)"
+                value={`+${formatMoney(Math.round(q.workCost * 0.1))}`}
+                valueClass="text-amber-600"
+              />
+            )}
+            {q.contractDeposit > 0 && (
+              <Row label="계약금" value={`-${formatMoney(q.contractDeposit)}`} valueClass="text-rose-500" />
             )}
             <div className="mt-3 pt-3 border-t border-slate-100 flex justify-between items-center">
               <span className="text-sm font-semibold text-slate-700">최종 견적금액</span>
@@ -160,6 +215,26 @@ export default function PreviewPage() {
               <p className="text-sm text-slate-600 whitespace-pre-line">{q.notes}</p>
             </div>
           )}
+
+          {/* 고정 안내문 */}
+          <div className="px-5 py-4 bg-amber-50 border-t border-amber-100">
+            <div className="mb-3">
+              <p className="text-xs font-semibold text-amber-700 mb-1">💳 입금계좌</p>
+              <p className="text-sm text-amber-900 font-medium">신한은행 110-312-878821</p>
+              <p className="text-sm text-amber-900 font-medium">예금주: 이정숙</p>
+            </div>
+            <p className="text-xs font-semibold text-amber-700 mb-2">📌 안내사항</p>
+            <ul className="space-y-1.5 text-xs text-amber-800 leading-relaxed">
+              <li>∙ <span className="font-medium">폐기물 처리:</span> 원활한 현장 정리를 위해 75리터 쓰레기봉투 ({settings.bagCount}장)을 반드시 사전에 준비해 주시기 바랍니다.</li>
+              <li>∙ <span className="font-medium">부가세 별도:</span> 본 견적은 부가세 미포함 금액입니다. (카드 결제 및 현금영수증 발행 시 10% 추가)</li>
+              <li>∙ <span className="font-medium">예약금 규정:</span> 계약 확정 후 단순 변심으로 인한 해지시, 예약금은 반환되지 않습니다.</li>
+              <li>∙ <span className="font-medium">시공 제외 구역:</span> 시스템형 및 붙박이 가구가 설치된 구역은 도배 시공이 불가합니다. (필요 시 사전 해체 필수)</li>
+              <li>∙ <span className="font-medium">하자 책임:</span> 기존 벽지 상태나 천장 구조 결함 등 사전 고지된 사항 외 문제에 대해서는 책임지지 않습니다.</li>
+            </ul>
+            <div className="mt-3 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+              <p className="text-xs font-bold text-red-600">※ 누수 및 결로로 인한 하자는 책임지지 않습니다.</p>
+            </div>
+          </div>
         </div>
 
         {/* 전송 버튼들 */}

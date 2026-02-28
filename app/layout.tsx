@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import Script from 'next/script';
+import KakaoInit from '@/components/KakaoInit';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -21,17 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ko">
       <body className="min-h-screen bg-slate-100">
-        {/* 카카오 SDK */}
-        <Script
-          src="https://t1.kakaocdn.net/kakaojs/2.7.4/kakao.js"
-          strategy="lazyOnload"
-          onLoad={() => {
-            const key = process.env.NEXT_PUBLIC_KAKAO_JS_KEY;
-            if (key && key !== '여기에_앱키_입력' && typeof window !== 'undefined' && (window as any).Kakao) {
-              (window as any).Kakao.init(key);
-            }
-          }}
-        />
+        <KakaoInit />
         <div className="max-w-md mx-auto min-h-screen bg-white shadow-sm relative">
           {children}
         </div>
