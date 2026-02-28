@@ -1,49 +1,25 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
 import { Quotation } from '@/types';
+import { getShareLink, BizSnap } from '@/lib/storage';
 import { formatMoney, formatPhone } from '@/lib/format';
 
-type BizSnap = {
-  bizName: string;
-  bizOwner: string;
-  bizRegNo: string;
-  bizPhone: string;
-  bizEmail: string;
-  quoteValidDays: number;
-  bagCount: number;
-};
-
-type Payload = { q: Quotation; biz: BizSnap; sentAt: string };
-
-function decodePayload(str: string): Payload {
-  // URL-safe base64 → 표준 base64로 복원
-  const base64 = str.replace(/-/g, '+').replace(/_/g, '/');
-  const binString = atob(base64);
-  const bytes = Uint8Array.from(binString, m => m.codePointAt(0)!);
-  return JSON.parse(new TextDecoder().decode(bytes));
-}
+type ShareData = { quotation: Quotation; biz: BizSnap; sentAt: string };
 
 export default function SharePage() {
-  const [payload, setPayload] = useState<Payload | null>(null);
+  const { id } = useParams<{ id: string }>();
+  const [data, setData] = useState<ShareData | null>(null);
   const [error, setError] = useState<'invalid' | 'expired' | null>(null);
 
   useEffect(() => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const d = params.get('d');
-      if (!d) throw new Error('no data');
-      const p = decodePayload(d);
-      // 유효기간 체크
-      const diffDays = (Date.now() - new Date(p.sentAt).getTime()) / (1000 * 60 * 60 * 24);
-      if (diffDays > p.biz.quoteValidDays) {
-        setError('expired');
-      } else {
-        setPayload(p);
-      }
-    } catch {
-      setError('invalid');
-    }
-  }, []);
+    getShareLink(id).then(result => {
+      if (!result) { setError('invalid'); return; }
+      const diffDays = (Date.now() - new Date(result.sentAt).getTime()) / (1000 * 60 * 60 * 24);
+      if (diffDays > result.biz.quoteValidDays) { setError('expired'); return; }
+      setData(result);
+    });
+  }, [id]);
 
   if (error === 'expired') {
     return (
@@ -65,7 +41,7 @@ export default function SharePage() {
     );
   }
 
-  if (!payload) {
+  if (!data) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <p className="text-slate-400">견적서를 불러오는 중...</p>
@@ -73,17 +49,14 @@ export default function SharePage() {
     );
   }
 
-  const { q, biz, sentAt } = payload;
+  const { quotation: q, biz, sentAt } = data;
   const sentDateStr = new Date(sentAt).toLocaleDateString('ko-KR', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
+    year: 'numeric', month: 'long', day: 'numeric',
   });
   const wallpaperLabel = q.wallpaperType === '직접입력' ? q.wallpaperTypeCustom : q.wallpaperType;
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50 pb-12">
-      {/* 헤더 */}
       <header className="bg-white border-b border-slate-100 px-4 pt-12 pb-4">
         <p className="text-xs text-slate-400 mb-0.5">도배 견적서</p>
         <h1 className="text-lg font-bold text-slate-800">{biz.bizName}</h1>
@@ -92,10 +65,9 @@ export default function SharePage() {
       <div className="px-4 py-5">
         <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
 
-          {/* 문서 헤더 — 수신 / 업체 정보 */}
+          {/* 문서 헤더 */}
           <div className="px-5 pt-5 pb-4 border-b border-slate-100">
             <div className="grid grid-cols-2 gap-x-4">
-              {/* 왼쪽 */}
               <div className="space-y-2.5">
                 <div>
                   <p className="text-[10px] text-slate-400 mb-0.5">수신</p>
@@ -110,7 +82,6 @@ export default function SharePage() {
                   <p className="text-sm text-slate-700">견적일로부터 {biz.quoteValidDays}일</p>
                 </div>
               </div>
-              {/* 오른쪽 */}
               <div className="space-y-2.5">
                 <div>
                   <p className="text-[10px] text-slate-400 mb-0.5">상호</p>
@@ -127,9 +98,7 @@ export default function SharePage() {
                 <div>
                   <p className="text-[10px] text-slate-400 mb-0.5">연락처</p>
                   <p className="text-sm text-slate-700">{biz.bizPhone}</p>
-                  {biz.bizEmail && (
-                    <p className="text-xs text-slate-500 mt-0.5">{biz.bizEmail}</p>
-                  )}
+                  {biz.bizEmail && <p className="text-xs text-slate-500 mt-0.5">{biz.bizEmail}</p>}
                 </div>
               </div>
             </div>
@@ -162,24 +131,13 @@ export default function SharePage() {
           {/* 금액 명세 */}
           <div className="px-5 py-4">
             <p className="text-xs font-semibold text-slate-400 mb-3">금액 명세</p>
-            <Row
-              label="결제 방식"
-              value={q.paymentMethod === '카드' ? '💳 카드' : '💵 현금'}
-            />
+            <Row label="결제 방식" value={q.paymentMethod === '카드' ? '💳 카드' : '💵 현금'} />
             <Row label="벽지 · 인건비 · 부자재" value={formatMoney(q.workCost)} />
             {q.paymentMethod === '카드' && q.workCost > 0 && (
-              <Row
-                label="부가세 (VAT 10%)"
-                value={`+${formatMoney(Math.round(q.workCost * 0.1))}`}
-                valueClass="text-amber-600"
-              />
+              <Row label="부가세 (VAT 10%)" value={`+${formatMoney(Math.round(q.workCost * 0.1))}`} valueClass="text-amber-600" />
             )}
             {q.contractDeposit > 0 && (
-              <Row
-                label="계약금"
-                value={`-${formatMoney(q.contractDeposit)}`}
-                valueClass="text-rose-500"
-              />
+              <Row label="계약금" value={`-${formatMoney(q.contractDeposit)}`} valueClass="text-rose-500" />
             )}
             <div className="mt-3 pt-3 border-t border-slate-100 flex justify-between items-center">
               <span className="text-sm font-semibold text-slate-700">최종 견적금액</span>

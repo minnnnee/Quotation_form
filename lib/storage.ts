@@ -76,3 +76,32 @@ export async function deleteQuotation(id: string): Promise<void> {
     .eq('id', id);
   if (error) throw error;
 }
+
+export type BizSnap = {
+  bizName: string; bizOwner: string; bizRegNo: string;
+  bizPhone: string; bizEmail: string;
+  quoteValidDays: number; bagCount: number;
+};
+
+// 공유 링크 생성 → DB에 저장하고 짧은 ID 반환
+export async function createShareLink(q: Quotation, biz: BizSnap): Promise<string> {
+  const { data, error } = await supabase
+    .from('share_links')
+    .insert({ quotation: q, biz, sent_at: new Date().toISOString() })
+    .select('id')
+    .single();
+  if (error) throw error;
+  return data.id as string;
+}
+
+export type ShareLinkData = { quotation: Quotation; biz: BizSnap; sentAt: string };
+
+export async function getShareLink(id: string): Promise<ShareLinkData | null> {
+  const { data, error } = await supabase
+    .from('share_links')
+    .select('quotation, biz, sent_at')
+    .eq('id', id)
+    .single();
+  if (error) return null;
+  return { quotation: data.quotation as Quotation, biz: data.biz as BizSnap, sentAt: data.sent_at as string };
+}

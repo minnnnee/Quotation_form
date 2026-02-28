@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Quotation } from '@/types';
-import { getQuotationById } from '@/lib/storage';
+import { getQuotationById, createShareLink } from '@/lib/storage';
 import { formatMoney, formatQuotationText, formatPhone } from '@/lib/format';
 import { getSettings, AppSettings } from '@/lib/settings';
 
@@ -48,8 +48,8 @@ export default function PreviewPage() {
     setTimeout(() => setCopied(false), 2500);
   }
 
-  // 링크 공유
-  function generateShareUrl(): string {
+  // 링크 공유 — Supabase에 저장 후 짧은 URL 반환
+  async function buildShareUrl(): Promise<string> {
     const biz = {
       bizName: settings.bizName,
       bizOwner: settings.bizOwner,
@@ -59,16 +59,12 @@ export default function PreviewPage() {
       quoteValidDays: settings.quoteValidDays,
       bagCount: settings.bagCount,
     };
-    const payload = { q, biz, sentAt: new Date().toISOString() };
-    const bytes = new TextEncoder().encode(JSON.stringify(payload));
-    const binString = Array.from(bytes, b => String.fromCodePoint(b)).join('');
-    // URL-safe base64: + → -, / → _, = 제거
-    const encoded = btoa(binString).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-    return `${window.location.origin}/share?d=${encoded}`;
+    const shareId = await createShareLink(q!, biz);
+    return `${window.location.origin}/share/${shareId}`;
   }
 
   async function handleShareLink() {
-    const url = generateShareUrl();
+    const url = await buildShareUrl();
     if (navigator.share) {
       try {
         await navigator.share({ url });
@@ -92,9 +88,9 @@ export default function PreviewPage() {
   }
 
   // SMS — 링크 전송
-  function handleSMS() {
+  async function handleSMS() {
     const phone = q?.customerPhone.replace(/\D/g, '') ?? '';
-    const url = generateShareUrl();
+    const url = await buildShareUrl();
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     window.open(`sms:${phone}${isIOS ? '&' : '?'}body=${encodeURIComponent(url)}`);
   }
