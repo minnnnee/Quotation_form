@@ -16,7 +16,9 @@ type BizSnap = {
 type Payload = { q: Quotation; biz: BizSnap; sentAt: string };
 
 function decodePayload(str: string): Payload {
-  const binString = atob(str);
+  // URL-safe base64 → 표준 base64로 복원
+  const base64 = str.replace(/-/g, '+').replace(/_/g, '/');
+  const binString = atob(base64);
   const bytes = Uint8Array.from(binString, m => m.codePointAt(0)!);
   return JSON.parse(new TextDecoder().decode(bytes));
 }

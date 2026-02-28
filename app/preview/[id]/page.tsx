@@ -105,7 +105,8 @@ export default function PreviewPage() {
     const payload = { q, biz, sentAt: new Date().toISOString() };
     const bytes = new TextEncoder().encode(JSON.stringify(payload));
     const binString = Array.from(bytes, b => String.fromCodePoint(b)).join('');
-    const encoded = btoa(binString);
+    // URL-safe base64: + → -, / → _, = 제거
+    const encoded = btoa(binString).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
     return `${window.location.origin}/share?d=${encoded}`;
   }
 
