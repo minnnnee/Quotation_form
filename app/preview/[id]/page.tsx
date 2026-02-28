@@ -16,8 +16,7 @@ export default function PreviewPage() {
   const [settings, setSettings] = useState<AppSettings>(getSettings());
 
   useEffect(() => {
-    const data = getQuotationById(id);
-    setQ(data);
+    getQuotationById(id).then(setQ);
     setSettings(getSettings());
   }, [id]);
 

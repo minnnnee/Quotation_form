@@ -21,7 +21,7 @@ export default function HomePage() {
   const [quoteValidDays, setQuoteValidDays] = useState(7);
 
   useEffect(() => {
-    setQuotations(getAllQuotations());
+    getAllQuotations().then(setQuotations).catch(() => {});
     const s = getSettings();
     setBagCount(s.bagCount);
     setBagCountStr(String(s.bagCount));
@@ -33,10 +33,10 @@ export default function HomePage() {
     setQuoteValidDays(s.quoteValidDays);
   }, []);
 
-  function handleDelete(id: string) {
+  async function handleDelete(id: string) {
     if (!confirm('견적서를 삭제할까요?')) return;
-    deleteQuotation(id);
-    setQuotations(getAllQuotations());
+    await deleteQuotation(id);
+    getAllQuotations().then(setQuotations).catch(() => {});
   }
 
   // 검색 필터: 주소 또는 평수

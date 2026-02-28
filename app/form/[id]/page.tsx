@@ -37,11 +37,12 @@ export default function FormPage() {
 
   useEffect(() => {
     if (!isNew) {
-      const q = getQuotationById(id);
-      if (q) {
-        const { id: _id, createdAt: _ca, ...rest } = q;
-        setForm({ ...rest, paymentMethod: rest.paymentMethod ?? '현금' });
-      }
+      getQuotationById(id).then(q => {
+        if (q) {
+          const { id: _id, createdAt: _ca, ...rest } = q;
+          setForm({ ...rest, paymentMethod: rest.paymentMethod ?? '현금' });
+        }
+      });
     }
   }, [id, isNew]);
 
@@ -60,13 +61,14 @@ export default function FormPage() {
       return;
     }
     setSaving(true);
+    const existing = isNew ? null : await getQuotationById(id);
     const quotation: Quotation = {
       id: isNew ? generateId() : id,
-      createdAt: isNew ? new Date().toISOString() : (getQuotationById(id)?.createdAt ?? new Date().toISOString()),
+      createdAt: isNew ? new Date().toISOString() : (existing?.createdAt ?? new Date().toISOString()),
       ...form,
       totalAmount: calcTotal(form),
     };
-    saveQuotation(quotation);
+    await saveQuotation(quotation);
     router.push(`/preview/${quotation.id}`);
   }
 
