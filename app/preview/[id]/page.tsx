@@ -11,6 +11,7 @@ export default function PreviewPage() {
   const { id } = useParams<{ id: string }>();
   const [q, setQ] = useState<Quotation | null>(null);
   const [copied, setCopied] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
   const [sending, setSending] = useState(false);
   const [settings, setSettings] = useState<AppSettings>(getSettings());
 
@@ -89,6 +90,48 @@ export default function PreviewPage() {
     }
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
+  }
+
+  // 링크 공유
+  function generateShareUrl(): string {
+    const biz = {
+      bizName: settings.bizName,
+      bizOwner: settings.bizOwner,
+      bizRegNo: settings.bizRegNo,
+      bizPhone: settings.bizPhone,
+      bizEmail: settings.bizEmail,
+      quoteValidDays: settings.quoteValidDays,
+      bagCount: settings.bagCount,
+    };
+    const payload = { q, biz, sentAt: new Date().toISOString() };
+    const bytes = new TextEncoder().encode(JSON.stringify(payload));
+    const binString = Array.from(bytes, b => String.fromCodePoint(b)).join('');
+    const encoded = btoa(binString);
+    return `${window.location.origin}/share?d=${encoded}`;
+  }
+
+  async function handleShareLink() {
+    const url = generateShareUrl();
+    if (navigator.share) {
+      try {
+        await navigator.share({ url });
+        return;
+      } catch (e: any) {
+        if (e?.name === 'AbortError') return;
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = url;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2500);
   }
 
   // SMS 전송
@@ -269,6 +312,21 @@ export default function PreviewPage() {
               <span className="ml-auto text-slate-300">›</span>
             </button>
           )}
+
+          {/* 링크 공유 */}
+          <button
+            onClick={handleShareLink}
+            className="w-full flex items-center gap-3 px-4 py-4 active:bg-slate-50 transition-colors"
+          >
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl ${linkCopied ? 'bg-green-100' : 'bg-blue-100'}`}>
+              {linkCopied ? '✅' : '🔗'}
+            </div>
+            <div className="text-left">
+              <p className="text-sm font-semibold text-slate-800">{linkCopied ? '링크 복사 완료!' : '링크로 공유'}</p>
+              <p className="text-xs text-slate-400 mt-0.5">고객이 링크를 열면 견적서가 표시됩니다</p>
+            </div>
+            <span className="ml-auto text-slate-300">›</span>
+          </button>
 
           {/* 클립보드 복사 */}
           <button

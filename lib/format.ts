@@ -4,7 +4,7 @@ import type { AppSettings } from './settings';
 type BizInfo = Pick<AppSettings, 'bizName' | 'bizOwner' | 'bizRegNo' | 'bizPhone' | 'bizEmail' | 'quoteValidDays'>;
 
 const DEFAULT_BIZ: BizInfo = {
-  bizName: '경성도배',
+  bizName: '감성도배',
   bizOwner: '이정숙',
   bizRegNo: '550-44-01153',
   bizPhone: '010-3222-1992',

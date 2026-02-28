@@ -13,7 +13,7 @@ export interface AppSettings {
 
 const DEFAULT: AppSettings = {
   bagCount: 10,
-  bizName: '경성도배',
+  bizName: '감성도배',
   bizOwner: '이정숙',
   bizRegNo: '550-44-01153',
   bizPhone: '010-3222-1992',
