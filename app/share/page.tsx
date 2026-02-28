@@ -25,25 +25,42 @@ function decodePayload(str: string): Payload {
 
 export default function SharePage() {
   const [payload, setPayload] = useState<Payload | null>(null);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<'invalid' | 'expired' | null>(null);
 
   useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search);
       const d = params.get('d');
       if (!d) throw new Error('no data');
-      setPayload(decodePayload(d));
+      const p = decodePayload(d);
+      // 유효기간 체크
+      const diffDays = (Date.now() - new Date(p.sentAt).getTime()) / (1000 * 60 * 60 * 24);
+      if (diffDays > p.biz.quoteValidDays) {
+        setError('expired');
+      } else {
+        setPayload(p);
+      }
     } catch {
-      setError(true);
+      setError('invalid');
     }
   }, []);
 
-  if (error) {
+  if (error === 'expired') {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-8 text-center">
+        <p className="text-5xl mb-4">⏰</p>
+        <p className="text-slate-700 font-semibold text-lg">견적 유효기간이 지났어요</p>
+        <p className="text-sm text-slate-400 mt-2">담당자에게 새 견적서를 요청해 주세요</p>
+      </div>
+    );
+  }
+
+  if (error === 'invalid') {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-8 text-center">
         <p className="text-5xl mb-4">😕</p>
         <p className="text-slate-700 font-semibold text-lg">견적서를 불러올 수 없어요</p>
-        <p className="text-sm text-slate-400 mt-2">링크가 잘못되었거나 만료된 링크예요</p>
+        <p className="text-sm text-slate-400 mt-2">링크가 잘못되었거나 이미 삭제된 링크예요</p>
       </div>
     );
   }
