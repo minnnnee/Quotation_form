@@ -12,7 +12,6 @@ export default function PreviewPage() {
   const [q, setQ] = useState<Quotation | null>(null);
   const [copied, setCopied] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
-  const [sending, setSending] = useState(false);
   const [settings, setSettings] = useState<AppSettings>(getSettings());
 
   useEffect(() => {
@@ -31,48 +30,6 @@ export default function PreviewPage() {
   const todayStr = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
   const text = formatQuotationText(q, settings.bagCount, settings);
   const wallpaperLabel = q.wallpaperType === '직접입력' ? q.wallpaperTypeCustom : q.wallpaperType;
-
-  // 카카오톡 공유
-  async function handleKakaoShare() {
-    setSending(true);
-    try {
-      const Kakao = (window as any).Kakao;
-      if (Kakao?.isInitialized()) {
-        // 앱키 설정 완료 → 카카오 공유 팝업
-        Kakao.Share.sendDefault({
-          objectType: 'text',
-          text,
-          link: {
-            mobileWebUrl: window.location.href,
-            webUrl: window.location.href,
-          },
-        });
-      } else {
-        // 앱키 미설정 → 네이티브 공유 시트 폴백
-        await fallbackShare();
-      }
-    } catch {
-      await fallbackShare();
-    } finally {
-      setSending(false);
-    }
-  }
-
-  // 네이티브 공유 시트 (카카오톡 선택 가능) 또는 클립보드
-  async function fallbackShare() {
-    if (navigator.share) {
-      try {
-        await navigator.share({ text });
-      } catch (e: any) {
-        // AbortError = 사용자가 공유 시트를 그냥 닫은 것 → 무시
-        if (e?.name !== 'AbortError') {
-          await copyToClipboard();
-        }
-      }
-    } else {
-      await copyToClipboard();
-    }
-  }
 
   async function copyToClipboard() {
     try {
@@ -134,13 +91,12 @@ export default function PreviewPage() {
     setTimeout(() => setLinkCopied(false), 2500);
   }
 
-  // SMS 전송
+  // SMS — 링크 전송
   function handleSMS() {
     const phone = q?.customerPhone.replace(/\D/g, '') ?? '';
-    const encoded = encodeURIComponent(text);
-    // iOS: sms:번호&body=내용 / Android: sms:번호?body=내용
+    const url = generateShareUrl();
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    window.open(`sms:${phone}${isIOS ? '&' : '?'}body=${encoded}`);
+    window.open(`sms:${phone}${isIOS ? '&' : '?'}body=${encodeURIComponent(url)}`);
   }
 
   return (
@@ -286,14 +242,13 @@ export default function PreviewPage() {
 
           {/* 카카오톡 공유 */}
           <button
-            onClick={handleKakaoShare}
-            disabled={sending}
-            className="w-full flex items-center gap-3 px-4 py-4 active:bg-slate-50 transition-colors disabled:opacity-60"
+            onClick={handleShareLink}
+            className="w-full flex items-center gap-3 px-4 py-4 active:bg-slate-50 transition-colors"
           >
             <div className="w-10 h-10 bg-yellow-400 rounded-xl flex items-center justify-center text-xl">💬</div>
             <div className="text-left">
               <p className="text-sm font-semibold text-slate-800">카카오톡으로 공유</p>
-              <p className="text-xs text-slate-400 mt-0.5">견적 내용을 카카오톡으로 전송</p>
+              <p className="text-xs text-slate-400 mt-0.5">링크를 보내 고객이 견적서를 확인</p>
             </div>
             <span className="ml-auto text-slate-300">›</span>
           </button>
@@ -357,12 +312,11 @@ export default function PreviewPage() {
       {/* 하단 버튼 */}
       <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto px-4 pb-8 pt-3 bg-gradient-to-t from-white to-transparent">
         <button
-          onClick={handleKakaoShare}
-          disabled={sending}
-          className="w-full bg-yellow-400 text-yellow-900 py-4 rounded-2xl text-base font-semibold shadow-lg shadow-yellow-200 active:scale-95 transition-transform disabled:opacity-60 flex items-center justify-center gap-2"
+          onClick={handleShareLink}
+          className="w-full bg-yellow-400 text-yellow-900 py-4 rounded-2xl text-base font-semibold shadow-lg shadow-yellow-200 active:scale-95 transition-transform flex items-center justify-center gap-2"
         >
           <span>💬</span>
-          <span>{sending ? '공유 중...' : '카카오톡으로 보내기'}</span>
+          <span>카카오톡으로 보내기</span>
         </button>
       </div>
     </div>
