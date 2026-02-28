@@ -208,7 +208,7 @@ export default function FormPage() {
           {form.paymentMethod === '카드' && form.workCost > 0 && (
             <Field label="부가세 (VAT 10%)">
               <div className="flex items-center justify-between px-3 py-2.5 bg-amber-50 border border-amber-100 rounded-xl">
-                <span className="text-xs text-amber-600">카드·현금영수증 발행 시 추가</span>
+                <span className="text-xs text-amber-600">현금영수증·세금계산서 발행 시 추가</span>
                 <span className="text-sm font-semibold text-amber-700">
                   +{Math.round(form.workCost * 0.1).toLocaleString('ko-KR')}원
                 </span>
