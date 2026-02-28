@@ -131,7 +131,7 @@ export default function SharePage() {
           {/* 금액 명세 */}
           <div className="px-5 py-4">
             <p className="text-xs font-semibold text-slate-400 mb-3">금액 명세</p>
-            <Row label="결제 방식" value={q.paymentMethod === '카드' ? '💳 카드' : '💵 현금'} />
+            <Row label="결제 방식" value={q.paymentMethod === '카드' ? '💳 부가세(VAT)' : '💵 현금'} />
             <Row label="벽지 · 인건비 · 부자재" value={formatMoney(q.workCost)} />
             {q.paymentMethod === '카드' && q.workCost > 0 && (
               <Row label="부가세 (VAT 10%)" value={`+${formatMoney(Math.round(q.workCost * 0.1))}`} valueClass="text-amber-600" />

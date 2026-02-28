@@ -195,7 +195,7 @@ export default function FormPage() {
                       : 'bg-white text-slate-600 border-slate-200 active:bg-slate-50'
                   }`}
                 >
-                  {m === '카드' ? '💳 카드' : '💵 현금'}
+                  {m === '카드' ? '💳 부가세(VAT)' : '💵 현금'}
                 </button>
               ))}
             </div>
