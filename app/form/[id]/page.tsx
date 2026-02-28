@@ -5,6 +5,16 @@ import { Quotation, WallpaperType, WorkScope, PaymentMethod } from '@/types';
 import { saveQuotation, getQuotationById } from '@/lib/storage';
 import { calcTotal, generateId } from '@/lib/format';
 
+function formatPhoneInput(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 11);
+  if (digits.startsWith('02')) {
+    if (digits.length <= 6) return digits.replace(/(\d{2})(\d{0,4})/, (_, a, b) => b ? `${a}-${b}` : a);
+    return digits.replace(/(\d{2})(\d{3,4})(\d{0,4})/, (_, a, b, c) => c ? `${a}-${b}-${c}` : `${a}-${b}`);
+  }
+  if (digits.length <= 7) return digits.replace(/(\d{3})(\d{0,4})/, (_, a, b) => b ? `${a}-${b}` : a);
+  return digits.replace(/(\d{3})(\d{4})(\d{0,4})/, (_, a, b, c) => c ? `${a}-${b}-${c}` : `${a}-${b}`);
+}
+
 const WALLPAPER_TYPES: WallpaperType[] = ['합지', '실크', '합지(소폭)', '직접입력'];
 const WORK_SCOPES: WorkScope[] = ['전체', '부분'];
 const PAYMENT_METHODS: PaymentMethod[] = ['현금', '카드'];
@@ -96,8 +106,9 @@ export default function FormPage() {
           <Field label="휴대폰 번호">
             <input
               type="tel"
+              inputMode="numeric"
               value={form.customerPhone}
-              onChange={e => set('customerPhone', e.target.value)}
+              onChange={e => set('customerPhone', formatPhoneInput(e.target.value))}
               placeholder="010-0000-0000"
               className={inputClass}
             />

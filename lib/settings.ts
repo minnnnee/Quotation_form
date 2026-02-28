@@ -20,7 +20,7 @@ const DEFAULT: AppSettings = {
   bizPhone: '010-3222-1992',
   bizEmail: 'seswotn11@naver.com',
   quoteValidDays: 7,
-  appPin: '',
+  appPin: '1220',
 };
 
 export function getSettings(): AppSettings {
