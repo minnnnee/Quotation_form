@@ -221,7 +221,7 @@ export default function PreviewPage() {
             <p className="text-xs font-semibold text-amber-700 mb-2">📌 안내사항</p>
             <ul className="space-y-1.5 text-xs text-amber-800 leading-relaxed">
               <li>∙ <span className="font-medium">폐기물 처리:</span> 원활한 현장 정리를 위해 75리터 쓰레기봉투 ({settings.bagCount}장)을 반드시 사전에 준비해 주시기 바랍니다.</li>
-              <li>∙ <span className="font-medium">부가세 별도:</span> 본 견적은 부가세 미포함 금액입니다. (카드 결제 및 현금영수증 발행 시 10% 추가)</li>
+              <li>∙ <span className="font-medium">부가세 별도:</span> 본 견적가는 부가세 미포함 금액입니다. (세금계산서•현금영수증 발행 시 10% 추가)</li>
               <li>∙ <span className="font-medium">예약금 규정:</span> 계약 확정 후 단순 변심으로 인한 해지시, 예약금은 반환되지 않습니다.</li>
               <li>∙ <span className="font-medium">시공 제외 구역:</span> 시스템형 및 붙박이 가구가 설치된 구역은 도배 시공이 불가합니다. (필요 시 사전 해체 필수)</li>
               <li>∙ <span className="font-medium">하자 책임:</span> 기존 벽지 상태나 천장 구조 결함 등 사전 고지된 사항 외 문제에 대해서는 책임지지 않습니다.</li>

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import KakaoInit from '@/components/KakaoInit';
+import PinGuard from '@/components/PinGuard';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -23,7 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen bg-slate-100">
         <KakaoInit />
         <div className="max-w-md mx-auto min-h-screen bg-white shadow-sm relative">
-          {children}
+          <PinGuard>{children}</PinGuard>
         </div>
       </body>
     </html>

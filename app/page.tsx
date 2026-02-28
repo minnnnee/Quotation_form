@@ -19,6 +19,7 @@ export default function HomePage() {
   const [bizPhone, setBizPhone] = useState('');
   const [bizEmail, setBizEmail] = useState('');
   const [quoteValidDays, setQuoteValidDays] = useState(7);
+  const [appPin, setAppPin] = useState('');
 
   useEffect(() => {
     getAllQuotations().then(setQuotations).catch(() => {});
@@ -31,6 +32,7 @@ export default function HomePage() {
     setBizPhone(s.bizPhone);
     setBizEmail(s.bizEmail);
     setQuoteValidDays(s.quoteValidDays);
+    setAppPin(s.appPin ?? '');
   }, []);
 
   async function handleDelete(id: string) {
@@ -283,13 +285,27 @@ export default function HomePage() {
                   </div>
                 </div>
               </div>
+
+              {/* 앱 잠금 PIN */}
+              <div className="bg-slate-50 rounded-2xl p-4">
+                <p className="text-xs font-semibold text-slate-500 mb-1">🔒 앱 잠금 PIN</p>
+                <p className="text-xs text-slate-400 mb-3">설정하면 앱 진입 시 PIN 입력이 필요합니다. 비워두면 잠금 해제.</p>
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  value={appPin}
+                  onChange={e => setAppPin(e.target.value)}
+                  placeholder="PIN 번호 (예: 1234)"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-400"
+                />
+              </div>
             </div>
 
             <button
               onClick={() => {
                 const parsed = parseInt(bagCountStr);
                 const valid = !isNaN(parsed) && parsed >= 1 ? parsed : 1;
-                saveSettings({ bagCount: valid, bizName, bizOwner, bizRegNo, bizPhone, bizEmail, quoteValidDays });
+                saveSettings({ bagCount: valid, bizName, bizOwner, bizRegNo, bizPhone, bizEmail, quoteValidDays, appPin });
                 setShowSettings(false);
               }}
               className="mt-4 shrink-0 w-full bg-blue-600 text-white py-3.5 rounded-2xl text-sm font-semibold active:scale-95 transition-transform"

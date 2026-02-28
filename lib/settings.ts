@@ -9,6 +9,7 @@ export interface AppSettings {
   bizPhone: string;       // 연락처
   bizEmail: string;       // 이메일
   quoteValidDays: number; // 유효기간 (일)
+  appPin: string;         // 앱 잠금 PIN (빈 문자열이면 비활성)
 }
 
 const DEFAULT: AppSettings = {
@@ -19,6 +20,7 @@ const DEFAULT: AppSettings = {
   bizPhone: '010-3222-1992',
   bizEmail: 'seswotn11@naver.com',
   quoteValidDays: 7,
+  appPin: '',
 };
 
 export function getSettings(): AppSettings {
